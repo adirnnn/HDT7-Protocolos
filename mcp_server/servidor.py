@@ -120,7 +120,7 @@ def con_log(nombre_tool, resumir_args):
                 raise
             ms = (time.perf_counter() - inicio) * 1000
             # del resultado solo se registra el principio en una linea (ahi
-            # va el codigo como CITA_CONFIRMADA o SIN_RESULTADOS), no todo
+            # se ve si la cita quedo confirmada, si no hubo resultados, etc.)
             log.info("tool=%s OK en %.0f ms -> %s", nombre_tool, ms, " ".join(resultado.split())[:70])
             return resultado
 
@@ -214,9 +214,9 @@ async def consultar_clima(
     *,
     ctx: Context,
 ) -> str:
-    """Consulta el pronostico del clima en la zona de salto para una fecha, sin
-    agendar nada. Sirve para que el usuario decida si quiere reservar. Si la
-    fecha no sirve devuelve FECHA_INVALIDA con el motivo."""
+    """Consulta el pronostico del clima en la zona de salto para una fecha y dice
+    si es apto para saltar. NO agenda nada: usala cuando el usuario solo quiere
+    saber el clima o todavia no pidio reservar."""
     try:
         datos = await _correr_con_timeout(consultar_clima_raw, fecha)
     except ToolError:
@@ -228,16 +228,30 @@ async def consultar_clima(
     # servidor: se devuelve como texto, igual que lo hacia la tool original,
     # para que el agente se lo explique al usuario
     if "error" in datos:
-        return f"FECHA_INVALIDA: {datos['error']}"
+        return f"Fecha no valida: {datos['error']}."
 
-    # mismo formato de texto que tenia la tool local en app/shared/tools.py
+    return _describir_pronostico(datos)
+
+
+# cambio de hdt7: el veredicto se traduce a una frase. antes la tool devolvia
+# "veredicto=NO_SEGURO ..." y el modelo a veces se lo mostraba asi al usuario
+_VEREDICTOS = {
+    "IDEAL": "condiciones ideales para saltar",
+    "MARGINAL": "condiciones marginales, solo recomendable con instructor tandem experimentado",
+    "NO_SEGURO": "no es seguro saltar",
+}
+
+
+def _describir_pronostico(datos):
+    """arma el texto del pronostico que recibe el agente (sin codigos internos)."""
     ev = datos["evaluacion"]
     problemas = "; ".join(ev["problemas"]) if ev["problemas"] else "ninguno"
     return (
-        f"fecha={datos['fecha']} veredicto={ev['veredicto']} "
-        f"temperatura={datos['temperatura']}C viento={datos['viento']}km/h "
-        f"rafagas={datos['rafaga']}km/h precipitacion={datos['precipitacion']}mm "
-        f"nubes={datos['nubes']}% problemas={problemas}"
+        f"Pronostico para el {datos['fecha']} al mediodia: {_VEREDICTOS[ev['veredicto']]}. "
+        f"Temperatura {datos['temperatura']} C, viento {datos['viento']} km/h, "
+        f"rafagas {datos['rafaga']} km/h, precipitacion {datos['precipitacion']} mm, "
+        f"nubes {datos['nubes']}%. Problemas: {problemas}. "
+        "Esto es solo una consulta: no se agendo ninguna cita."
     )
 
 
@@ -254,9 +268,9 @@ async def agendar_cita(
     ctx: Context,
     nombre: Annotated[str | None, Field(max_length=80, description="nombre de quien reserva, opcional")] = None,
 ) -> str:
-    """Revisa el clima de la fecha pedida y, si las condiciones son seguras
-    para saltar, agenda la cita. Si no son seguras, no agenda nada y explica
-    por que. Devuelve CITA_CONFIRMADA o NO_SE_PUDO_AGENDAR con el detalle."""
+    """Agenda (guarda) una cita de salto. Usala SOLO si el usuario pidio
+    explicitamente agendar o reservar. Revisa el clima antes: si no es seguro,
+    no guarda nada y explica por que."""
     try:
         return await _correr_con_timeout(agendar_cita_raw, fecha, nombre)
     except ToolError as e:

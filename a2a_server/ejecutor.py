@@ -28,6 +28,7 @@ from agents.exceptions import AgentsException, UserError
 from openai import APIError
 
 from centralizado import URL_MCP, conectar_mcp, construir_manager
+from shared.formato import a_texto_plano
 
 log = logging.getLogger("parachute.a2a")
 
@@ -147,7 +148,8 @@ class ParachuteExecutor(AgentExecutor):
         # se guarda el historial completo (incluye las llamadas a tools) solo
         # si el turno salio bien; si fallo, la pregunta no queda en memoria
         self.memoria.guardar(context_id, resultado.to_input_list())
-        return str(resultado.final_output)
+        # red de seguridad: se quita cualquier markdown que el modelo haya usado
+        return a_texto_plano(str(resultado.final_output))
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
         # no se implementa cancelacion (cada turno dura pocos segundos) y por

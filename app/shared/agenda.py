@@ -42,20 +42,27 @@ def _describir_clima(datos):
 def agendar_cita_raw(fecha_str, nombre=None):
     """revisa el clima de la fecha pedida y, si las condiciones lo permiten,
     guarda la cita. devuelve texto listo para que el llm se lo explique al
-    usuario."""
+    usuario.
+
+    cambio de hdt7: antes el texto empezaba con codigos internos
+    (CITA_CONFIRMADA, NO_SE_PUDO_AGENDAR) y los evals de hdt6 mostraron que el
+    modelo se los repetia al usuario. ahora la tool ya devuelve frases normales
+    en espanol, asi no hay codigo que se pueda "filtrar" a la respuesta."""
     datos = consultar_clima_raw(fecha_str)
 
     if "error" in datos:
-        return f"NO_SE_PUDO_AGENDAR: {datos['error']}"
+        # fecha mal escrita, pasada o a mas de 16 dias: no se agenda nada
+        return f"No se pudo agendar la cita: {datos['error']}. No se guardo ninguna cita."
 
     evaluacion = datos["evaluacion"]
     resumen = _describir_clima(datos)
 
     if evaluacion["veredicto"] == "NO_SEGURO":
         razones = "; ".join(evaluacion["problemas"])
+        # clima peligroso: se explica el motivo y no se guarda nada
         return (
-            f"NO_SE_PUDO_AGENDAR: el {datos['fecha']} el clima no es seguro para saltar "
-            f"({razones}). Datos: {resumen}. No se guardo ninguna cita, sugiere elegir otra fecha."
+            f"No se pudo agendar la cita: el {datos['fecha']} el clima no es seguro para saltar "
+            f"({razones}). Datos: {resumen}. No se guardo ninguna cita; sugiere elegir otra fecha."
         )
 
     cita = {
@@ -75,7 +82,8 @@ def agendar_cita_raw(fecha_str, nombre=None):
     else:
         aviso = "condiciones ideales para saltar"
 
+    # cita guardada: se da la fecha, el codigo de reserva y el aviso del clima
     return (
-        f"CITA_CONFIRMADA id={cita['id']} fecha={datos['fecha']} veredicto={evaluacion['veredicto']} "
-        f"({aviso}). Datos del clima: {resumen}."
+        f"Cita confirmada y guardada para el {datos['fecha']}, codigo de reserva {cita['id']}. "
+        f"Clima: {aviso}. Datos del clima: {resumen}."
     )
