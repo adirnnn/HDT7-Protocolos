@@ -6,8 +6,13 @@ import uuid
 from datetime import datetime, timezone
 
 from .clima import consultar_clima_raw
+from .config import env
 
-_RUTA_STORE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "citas.json")
+# archivo donde se guardan las citas. por defecto app/data/citas.json (esta en
+# el .gitignore). con la variable CITAS_FILE se puede apuntar a otro archivo,
+# por ejemplo uno temporal para que las pruebas no ensucien las citas reales
+_RUTA_DEFECTO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "citas.json")
+_RUTA_STORE = env("CITAS_FILE") or _RUTA_DEFECTO
 
 
 def _leer_citas():
@@ -18,7 +23,8 @@ def _leer_citas():
 
 
 def _guardar_cita(cita):
-    os.makedirs(os.path.dirname(_RUTA_STORE), exist_ok=True)
+    # crea la carpeta si no existe (el "or ." cubre un CITAS_FILE sin carpeta)
+    os.makedirs(os.path.dirname(_RUTA_STORE) or ".", exist_ok=True)
     citas = _leer_citas()
     citas.append(cita)
     with open(_RUTA_STORE, "w", encoding="utf-8") as f:
