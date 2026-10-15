@@ -77,6 +77,12 @@ def instrucciones_manager(nombre_rol, especialidades):
         "la fecha de la que se venia hablando o el nombre). No cambies la "
         "intencion: si el usuario solo pregunto por el clima, no pidas agendar; "
         "si pidio agendar, di que quiere agendar.\n"
+        # el sistema no puede consultar citas ya guardadas ni otros procesos;
+        # sin esta regla el modelo inventaba cosas como "revise su correo"
+        "Si el pedido no le toca a ningun especialista (por ejemplo consultar o "
+        "cancelar una cita que ya se agendo), di que con eso no puedes ayudar y "
+        "sugiere escribir a soporte@parachutesa.gt. No inventes procesos ni "
+        "canales que no existan, como correos de confirmacion.\n"
         "En la respuesta final no inventes nada que el especialista no haya dicho, "
         "en especial no digas que una cita quedo confirmada si el especialista no "
         f"lo confirmo.\n{REGLAS_TEXTO_PLANO}"
