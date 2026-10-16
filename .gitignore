@@ -7,11 +7,13 @@
 __pycache__/
 *.pyc
 
-# dependencias de node (promptfoo)
-node_modules/
-
 # datos generados en tiempo de ejecucion
 app/data/
+
+# caches de herramientas de python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # configuracion local del editor
 .vscode/

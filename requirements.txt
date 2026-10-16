@@ -1,6 +1,21 @@
-openai-agents>=0.22,<1
-psycopg[binary]>=3.1,<4
-pgvector>=0.3,<0.5
-sentence-transformers>=3,<4
-python-dotenv>=1,<2
-requests>=2.31,<3
+# versiones fijas: son las que se instalaron y probaron en hdt7 (python 3.11).
+# se fijan exactas porque mcp y a2a cambiaron mucho su api entre versiones
+# (mcp 2.x usa MCPServer en vez de FastMCP, a2a 1.x usa tipos protobuf)
+
+# sistema multiagente (manager + especialistas) y cliente mcp streamable http
+openai-agents==0.22.3
+# sdk oficial de mcp: servidor de herramientas (mcp_server/)
+mcp==2.2.0
+# sdk oficial de a2a: servidor (a2a_server/) y cliente (terminal/)
+a2a-sdk[http-server]==1.2.2
+# servidor asgi que corre las apps starlette de mcp y de a2a
+uvicorn==0.54.0
+# cliente http que usa la terminal (y el cliente de a2a por dentro)
+httpx==0.28.1
+
+# logica de negocio heredada de hdt6
+psycopg[binary]==3.3.6
+pgvector==0.4.2
+sentence-transformers==3.4.1
+python-dotenv==1.2.4
+requests==2.34.2

@@ -1,20 +1,23 @@
 # infraestructura del agente: postgres con la extension pgvector
 # se levanta desde la raiz con:  docker compose -f infra/docker-compose.yml up -d
-# nombre, puerto y volumen propios para no chocar con el contenedor de hdt4
+# nombre de proyecto, contenedor, puerto y volumen propios para no chocar con
+# los contenedores de hdt4 y hdt6 (que tambien viven en una carpeta "infra")
+
+name: parachute-hdt7
 
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: parachute_pgvector_evals
+    container_name: parachute_pgvector_hdt7
     restart: unless-stopped
     environment:
       POSTGRES_USER: parachute
       POSTGRES_PASSWORD: parachute
       POSTGRES_DB: parachute
     ports:
-      - "5435:5432"
+      - "5436:5432"
     volumes:
-      - parachute_evals_pgdata:/var/lib/postgresql/data
+      - parachute_hdt7_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U parachute -d parachute"]
       interval: 5s
@@ -22,4 +25,4 @@ services:
       retries: 10
 
 volumes:
-  parachute_evals_pgdata:
+  parachute_hdt7_pgdata:
